@@ -13,6 +13,21 @@ function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerBackTitle: "Back" }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="recipe/[id]" options={{ headerShown: false }} />
+      <Stack.Screen 
+        name="share/record" 
+        options={{ 
+          headerShown: true,
+          presentation: "modal"
+        }} 
+      />
+      <Stack.Screen 
+        name="import" 
+        options={{ 
+          headerShown: true,
+          presentation: "modal"
+        }} 
+      />
     </Stack>
   );
 }

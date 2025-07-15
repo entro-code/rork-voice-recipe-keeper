@@ -1,8 +1,8 @@
 import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
-import { Plus } from "lucide-react-native";
+import { Plus, Share } from "lucide-react-native";
 import React, { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, Alert, Platform } from "react-native";
 
 import Button from "@/components/Button";
 import EmptyState from "@/components/EmptyState";
@@ -22,18 +22,74 @@ export default function RecipesScreen() {
     router.push("/create");
   };
 
+  const shareRecordingLink = () => {
+    const baseUrl = Platform.OS === 'web' 
+      ? window.location.origin 
+      : 'https://your-app-domain.com'; // Replace with your actual domain
+    
+    const shareUrl = `${baseUrl}/share/record`;
+    
+    if (Platform.OS === 'web') {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        Alert.alert(
+          "Link Copied!",
+          "Share this link with someone to let them record a recipe for you:\n\n" + shareUrl,
+          [{ text: "OK" }]
+        );
+      }).catch(() => {
+        Alert.alert(
+          "Share Recipe Recording",
+          "Copy this link to share:\n\n" + shareUrl,
+          [{ text: "OK" }]
+        );
+      });
+    } else {
+      Alert.alert(
+        "Share Recipe Recording",
+        "Copy this link to share:\n\n" + shareUrl,
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Copy Link", 
+            onPress: () => {
+              // On mobile, you might want to use expo-clipboard here
+              Alert.alert("Link Ready", "Share this link with someone to let them record a recipe for you.");
+            }
+          }
+        ]
+      );
+    }
+  };
+
+  const navigateToImport = () => {
+    router.push("/import");
+  };
+
   if (recipes.length === 0) {
     return (
       <View style={styles.container}>
+        <View style={styles.emptyHeader}>
+          <Pressable style={styles.shareButton} onPress={shareRecordingLink}>
+            <Share size={20} color={Colors.sageGreen} />
+          </Pressable>
+        </View>
         <EmptyState
           message="No recipes yet"
-          subMessage="Start by creating your first recipe"
+          subMessage="Start by creating your first recipe or import one from a shared recording"
         />
-        <Button
-          title="Create Recipe"
-          onPress={navigateToCreate}
-          style={styles.createButton}
-        />
+        <View style={styles.emptyActions}>
+          <Button
+            title="Create Recipe"
+            onPress={navigateToCreate}
+            style={styles.createButton}
+          />
+          <Button
+            title="Import Recording"
+            onPress={navigateToImport}
+            variant="outline"
+            style={styles.importButton}
+          />
+        </View>
       </View>
     );
   }
@@ -42,9 +98,14 @@ export default function RecipesScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>My Recipes</Text>
-        <Pressable style={styles.addButton} onPress={navigateToCreate}>
-          <Plus size={24} color={Colors.sageGreen} />
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable style={styles.shareButton} onPress={shareRecordingLink}>
+            <Share size={20} color={Colors.sageGreen} />
+          </Pressable>
+          <Pressable style={styles.addButton} onPress={navigateToCreate}>
+            <Plus size={24} color={Colors.sageGreen} />
+          </Pressable>
+        </View>
       </View>
 
       <FlashList
@@ -53,6 +114,15 @@ export default function RecipesScreen() {
         estimatedItemSize={120}
         contentContainerStyle={styles.listContent}
       />
+
+      <View style={styles.floatingActions}>
+        <Button
+          title="Import Recording"
+          onPress={navigateToImport}
+          variant="outline"
+          style={styles.floatingImportButton}
+        />
+      </View>
     </View>
   );
 }
@@ -61,6 +131,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  emptyHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 20,
+    paddingTop: 16,
   },
   header: {
     flexDirection: "row",
@@ -82,6 +158,20 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.text,
   },
+  headerActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  shareButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.paleSageGreen,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.lightSageGreen,
+  },
   addButton: {
     width: 44,
     height: 44,
@@ -95,9 +185,26 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 20,
   },
-  createButton: {
+  emptyActions: {
     position: "absolute",
     bottom: 32,
-    alignSelf: "center",
+    left: 20,
+    right: 20,
+    gap: 12,
+  },
+  createButton: {
+    width: "100%",
+  },
+  importButton: {
+    width: "100%",
+  },
+  floatingActions: {
+    position: "absolute",
+    bottom: 32,
+    right: 20,
+  },
+  floatingImportButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
 });
