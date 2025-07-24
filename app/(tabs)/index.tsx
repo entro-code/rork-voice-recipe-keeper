@@ -1,18 +1,23 @@
 import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
-import { Plus, Share } from "lucide-react-native";
-import React, { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View, Alert, Platform } from "react-native";
+import { Plus, Share, Users } from "lucide-react-native";
+import React, { useMemo, useState } from "react";
+import { Pressable, StyleSheet, Text, View, Alert, Platform, Modal } from "react-native";
 
 import Button from "@/components/Button";
 import EmptyState from "@/components/EmptyState";
 import RecipeCard from "@/components/RecipeCard";
+import { SharedRecordings } from "@/components/SharedRecordings";
+import { ShareLinkModal } from "@/components/ShareLinkModal";
 import Colors from "@/constants/colors";
 import { useRecipeStore } from "@/store/recipeStore";
 
 export default function RecipesScreen() {
   const router = useRouter();
   const recipes = useRecipeStore((state) => state.recipes);
+  const [showSharedRecordings, setShowSharedRecordings] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [userId] = useState(() => `user_${Date.now()}`);
 
   const sortedRecipes = useMemo(() => {
     return [...recipes].sort((a, b) => b.createdAt - a.createdAt);
@@ -22,43 +27,12 @@ export default function RecipesScreen() {
     router.push("/create");
   };
 
-  const shareRecordingLink = () => {
-    const baseUrl = Platform.OS === 'web' 
-      ? window.location.origin 
-      : 'https://your-app-domain.com'; // Replace with your actual domain
-    
-    const shareUrl = `${baseUrl}/share/record`;
-    
-    if (Platform.OS === 'web') {
-      navigator.clipboard.writeText(shareUrl).then(() => {
-        Alert.alert(
-          "Link Copied!",
-          "Share this link with someone to let them record a recipe for you:\n\n" + shareUrl,
-          [{ text: "OK" }]
-        );
-      }).catch(() => {
-        Alert.alert(
-          "Share Recipe Recording",
-          "Copy this link to share:\n\n" + shareUrl,
-          [{ text: "OK" }]
-        );
-      });
-    } else {
-      Alert.alert(
-        "Share Recipe Recording",
-        "Copy this link to share:\n\n" + shareUrl,
-        [
-          { text: "Cancel", style: "cancel" },
-          { 
-            text: "Copy Link", 
-            onPress: () => {
-              // On mobile, you might want to use expo-clipboard here
-              Alert.alert("Link Ready", "Share this link with someone to let them record a recipe for you.");
-            }
-          }
-        ]
-      );
-    }
+  const openShareModal = () => {
+    setShowShareModal(true);
+  };
+
+  const openSharedRecordings = () => {
+    setShowSharedRecordings(true);
   };
 
   const navigateToImport = () => {
@@ -69,9 +43,14 @@ export default function RecipesScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.emptyHeader}>
-          <Pressable style={styles.shareButton} onPress={shareRecordingLink}>
-            <Share size={20} color={Colors.sageGreen} />
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable style={styles.shareButton} onPress={openSharedRecordings}>
+              <Users size={20} color={Colors.sageGreen} />
+            </Pressable>
+            <Pressable style={styles.shareButton} onPress={openShareModal}>
+              <Share size={20} color={Colors.sageGreen} />
+            </Pressable>
+          </View>
         </View>
         <EmptyState
           message="No recipes yet"
@@ -90,6 +69,29 @@ export default function RecipesScreen() {
             style={styles.importButton}
           />
         </View>
+
+        <ShareLinkModal
+          visible={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          userId={userId}
+        />
+
+        <Modal
+          visible={showSharedRecordings}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowSharedRecordings(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Shared Recordings</Text>
+              <Pressable onPress={() => setShowSharedRecordings(false)}>
+                <Text style={styles.closeText}>Done</Text>
+              </Pressable>
+            </View>
+            <SharedRecordings userId={userId} />
+          </View>
+        </Modal>
       </View>
     );
   }
@@ -99,7 +101,10 @@ export default function RecipesScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>My Recipes</Text>
         <View style={styles.headerActions}>
-          <Pressable style={styles.shareButton} onPress={shareRecordingLink}>
+          <Pressable style={styles.shareButton} onPress={openSharedRecordings}>
+            <Users size={20} color={Colors.sageGreen} />
+          </Pressable>
+          <Pressable style={styles.shareButton} onPress={openShareModal}>
             <Share size={20} color={Colors.sageGreen} />
           </Pressable>
           <Pressable style={styles.addButton} onPress={navigateToCreate}>
@@ -123,6 +128,29 @@ export default function RecipesScreen() {
           style={styles.floatingImportButton}
         />
       </View>
+
+      <ShareLinkModal
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        userId={userId}
+      />
+
+      <Modal
+        visible={showSharedRecordings}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSharedRecordings(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Shared Recordings</Text>
+            <Pressable onPress={() => setShowSharedRecordings(false)}>
+              <Text style={styles.closeText}>Done</Text>
+            </Pressable>
+          </View>
+          <SharedRecordings userId={userId} />
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -206,5 +234,28 @@ const styles = StyleSheet.create({
   floatingImportButton: {
     paddingHorizontal: 20,
     paddingVertical: 12,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    backgroundColor: Colors.cardBackground,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  closeText: {
+    fontSize: 16,
+    color: Colors.primary,
+    fontWeight: '500',
   },
 });

@@ -1,6 +1,6 @@
 import * as ImagePicker from "expo-image-picker";
 import { Stack, useRouter } from "expo-router";
-import { Camera, Edit3, Mic } from "lucide-react-native";
+import { Camera, Edit3, Mic, Share2 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   Image,
@@ -16,6 +16,7 @@ import {
 
 import Button from "@/components/Button";
 import VoiceRecorder from "@/components/VoiceRecorder";
+import { ShareLinkModal } from "@/components/ShareLinkModal";
 import Colors from "@/constants/colors";
 import { useRecipeStore } from "@/store/recipeStore";
 import { Recipe } from "@/types/recipe";
@@ -34,6 +35,8 @@ export default function CreateRecipeScreen() {
   const [servings, setServings] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [creationMode, setCreationMode] = useState<'select' | 'manual' | 'voice'>('select');
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [userId] = useState(() => `user_${Date.now()}`);
 
   const handleTranscriptionComplete = (text: string) => {
     const parsedRecipe = parseRecipeFromText(text);
@@ -145,6 +148,10 @@ export default function CreateRecipeScreen() {
     setIsRecording(true);
   };
 
+  const openShareModal = () => {
+    setShowShareModal(true);
+  };
+
   const goBackToSelection = () => {
     setCreationMode('select');
     setIsRecording(false);
@@ -194,8 +201,24 @@ export default function CreateRecipeScreen() {
                 Speak your recipe and we will convert it to text automatically
               </Text>
             </Pressable>
+
+            <Pressable style={styles.optionCard} onPress={openShareModal}>
+              <View style={styles.optionIcon}>
+                <Share2 size={32} color={Colors.primary} />
+              </View>
+              <Text style={styles.optionTitle}>Share Recording Link</Text>
+              <Text style={styles.optionDescription}>
+                Send a link to someone so they can record their recipe for you
+              </Text>
+            </Pressable>
           </View>
         </View>
+
+        <ShareLinkModal
+          visible={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          userId={userId}
+        />
       </View>
     );
   }
