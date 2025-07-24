@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure } from "../../create-context";
+import { publicProcedure } from "../../../create-context";
 import { nanoid } from "nanoid";
 
 // In-memory storage for demo purposes
